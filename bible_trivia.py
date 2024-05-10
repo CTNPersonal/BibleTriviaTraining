@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 QUESTIONS = os.getenv("QUESTIONS", "questions.json")
-NUMBEROFQUESTIONS = int(os.getenv("NUMBEROFQUESTIONS", 0))
+NUMBEROFQUESTIONS = int(os.getenv("NUMBEROFQUESTIONS", 10))
 
 
 def initialize():
