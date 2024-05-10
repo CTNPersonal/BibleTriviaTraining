@@ -36,8 +36,16 @@ def initialize():
 
 def check_answer(user_answer, correct_answer):
     def normalize_answer(answer):
-        """Removes extra spaces, punctuation, and makes it lowercase"""
-        return "".join(c for c in answer if c.isalnum()).lower()
+        """Removes extra spaces and makes it lowercase"""
+        return answer.lower().replace(" ", "")
+
+    def check_verse_range(user, correct):
+        """Check if user answer matches at least the first verse of the correct answer"""
+        first_verse_user = user.split("-")[0]
+        first_verse_correct = correct.split("-")[0]
+        return normalize_answer(first_verse_user) == normalize_answer(
+            first_verse_correct
+        )
 
     normalized_user_answer = normalize_answer(user_answer)
     normalized_correct_answer = normalize_answer(correct_answer)
@@ -49,14 +57,23 @@ def check_answer(user_answer, correct_answer):
     # Check for answers with multiple verses
     if "and" in normalized_correct_answer:
         verse_options = normalized_correct_answer.split("and")
-        return all(verse in normalized_user_answer for verse in verse_options)
+        user_answers = normalized_user_answer.split("and")
+        if len(user_answers) < len(verse_options):
+            return False
+        return all(
+            any(check_verse_range(user, verse) for verse in verse_options)
+            for user in user_answers
+        )
 
     # Check for answers with 'or'
     if "or" in normalized_correct_answer:
         verse_options = normalized_correct_answer.split("or")
-        return any(verse in normalized_user_answer for verse in verse_options)
+        return any(
+            check_verse_range(normalized_user_answer, verse) for verse in verse_options
+        )
 
-    return False  # Default to incorrect
+    # Check for answers with range of verses
+    return check_verse_range(normalized_user_answer, normalized_correct_answer)
 
 
 def submit_answer(current_question_index, current_question, current_answer):
@@ -95,11 +112,13 @@ st.write("\n" * 6)
 number_of_questions_to_play = st.session_state.number_of_questions_to_play
 questions = st.session_state.questions
 if st.session_state.current_question_index < number_of_questions_to_play:
-    print(f"Current question index: {st.session_state.current_question_index}")
     question = questions[st.session_state.current_question_index]
     current_question = question["question"]
     current_answer = question["answer"]
     current_question_index = st.session_state.current_question_index
+    print(f"Current question index: {current_question_index}")
+    print(f"Current question: {current_question}")
+    print(f"Current answer: {current_answer}")
 
     # If previous question was answered, display the result
     if st.session_state.last_result:
@@ -126,6 +145,18 @@ if st.session_state.current_question_index < number_of_questions_to_play:
 
 # Display final results
 if st.session_state.current_question_index >= number_of_questions_to_play:
+    # If previous question was answered, display the result
+    if st.session_state.last_result:
+        last_question = st.session_state.last_result["last_question"]
+        last_user_answer = st.session_state.last_result["last_user_answer"]
+        last_answer = st.session_state.last_result["last_answer"]
+        last_result = st.session_state.last_result["last_result"]
+        st.markdown(
+            f'<div style="border:2px solid red; padding:10px; font-size: medium; height: 200px; overflow: auto; white-space: pre-wrap;">Score: {st.session_state.correct_answers}/{number_of_questions_to_play}\nLast question: {last_question}\nYour answer: {last_user_answer}\nCorrect answer: {last_answer}\nResult: {last_result}</div>',
+            unsafe_allow_html=True,
+        )
+        st.write("\n" * 8)
+
     st.write("Game Over!")
     st.write(f"Correct Answers: {st.session_state.correct_answers}")
     st.write(f"Incorrect Answers: {st.session_state.incorrect_answers}")
