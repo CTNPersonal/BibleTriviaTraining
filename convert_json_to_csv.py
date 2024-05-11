@@ -1,5 +1,6 @@
 import json
 import csv
+import re
 
 
 def json_to_csv(json_file, csv_file):
@@ -17,8 +18,14 @@ def json_to_csv(json_file, csv_file):
         # Write data
         for item in data["questions"]:
             print(f"Data: {item}")
-            writer.writerow([item["question"], item["answer"]])
+            question = re.sub(
+                r"\([^)]*\)", "", item["question"]
+            )  # Remove text in parentheses
+            try:
+                writer.writerow([question, item["answer"]])
+            except Exception as e:
+                print(f"Skip missing data for {item} - Error: {e}")
 
 
 # Convert JSON to CSV
-json_to_csv("questions.json", "questions.csv")
+json_to_csv("google_list.json", "google_list.csv")
