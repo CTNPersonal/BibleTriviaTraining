@@ -1,6 +1,7 @@
 import json
 import csv
 import re
+import argparse
 
 
 def json_to_csv(json_file, csv_file):
@@ -8,24 +9,33 @@ def json_to_csv(json_file, csv_file):
     with open(json_file, "r") as f:
         data = json.load(f)
 
-    # Open CSV file for writing
-    with open(csv_file, "w", newline="") as f:
-        writer = csv.writer(f)
+    header = ["Rank", "Question", "Answer"]
 
-        # Write header
-        writer.writerow(["Question", "Answer"])
+    # Open CSV file for writing
+    with open(csv_file, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=header)
 
         # Write data
-        for item in data["questions"]:
-            print(f"Data: {item}")
-            question = re.sub(
-                r"\([^)]*\)", "", item["question"]
-            )  # Remove text in parentheses
-            try:
-                writer.writerow([question, item["answer"]])
-            except Exception as e:
-                print(f"Skip missing data for {item} - Error: {e}")
+        for entry in data:
+            writer.writerow(
+                {
+                    "Rank": entry["rank"],
+                    "Question": entry["question"],
+                    "Answer": entry["answer"],
+                }
+            )
 
 
-# Convert JSON to CSV
-json_to_csv("google_list.json", "google_list.csv")
+def main():
+    parser = argparse.ArgumentParser(description="Convert JSON file to CSV file")
+    parser.add_argument(
+        "book",
+        type=str,
+        help="The book of the Bible in json format (e.g., isaiah.json)",
+    )
+    args = parser.parse_args()
+    json_to_csv(f"{args.book}.json", f"csv/{args.book}.csv")
+
+
+if __name__ == "__main__":
+    main()
